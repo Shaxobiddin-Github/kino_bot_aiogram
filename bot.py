@@ -10,8 +10,8 @@ import uvicorn
 
 # Muhit o'zgaruvchilarini yuklash
 API_TOKEN = os.getenv("BOT_TOKEN")
-BACKEND_URL = os.getenv("API_URL")
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # Webhook uchun URL
+BACKEND_URL = "https://telegram-bot-api-hyyl.onrender.com/api/movie/"
+WEBHOOK_URL = "https://telegram-bot-api-hyyl.onrender.com/webhook"
 CHANNEL_USERNAME = "SNAYDERCOM"  # Kanal username
 
 # Bot va dispatcher yaratish
