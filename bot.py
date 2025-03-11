@@ -4,9 +4,11 @@ import asyncio
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiogram.types import ContentType
+import os
 
-API_TOKEN = "7775904021:AAFZZTv9DYwJMUXeKsBCNXznkDYchWbNT2o"
-BACKEND_URL = "http://127.0.0.1:8000/api/movie/"
+# Muhit o'zgaruvchilarini yuklash
+API_TOKEN = os.getenv("BOT_TOKEN")
+BACKEND_URL = os.getenv("API_URL")
 CHANNEL_USERNAME = "SNAYDERCOM"  # Kanal username
 
 bot = Bot(token=API_TOKEN)
@@ -14,10 +16,20 @@ dp = Dispatcher()
 
 logging.basicConfig(level=logging.INFO)
 
+# Backend API'ni uyg'otish
+async def keep_alive():
+    while True:
+        try:
+            requests.get(f"{BACKEND_URL}/ping/")  # API'ni uyg'otish
+            logging.info("API ping yuborildi")
+        except Exception as e:
+            logging.error(f"API ping yuborishda xatolik: {str(e)}")
+        await asyncio.sleep(600)  # Har 10 daqiqada ping yuborish
+
 # /start buyrug'i
 @dp.message(Command("start"))
 async def send_welcome(message: types.Message):
-    await message.answer("🎬 Assalomu alaykum!\n\nuzingizga kerakli kino kodini kiriting🔒 ")
+    await message.answer("🎬 Assalomu alaykum!\n\nUziningizga kerakli kino kodini kiriting🔒 ")
 
 # Video yuborilganda (bazaga saqlash uchun)
 @dp.message(lambda msg: msg.content_type == ContentType.VIDEO)
@@ -58,14 +70,13 @@ async def send_movie(message: types.Message):
         data = response.json()
         file_id = data["file_id"]  # file_id ni olish (URL)
         description = data["description"]
-        await message.answer(f"{description} \n 📢 channel: ➡️  {file_id} KANALIMIZGA AZO BULSANGIZ XURSAND BULARDIK")  # Faqat file_id qaytariladi
-        
-
+        await message.answer(f"{description} \n 📢 channel: ➡️  {file_id} KANALIMIZGA AZO BULSANGIZ XURSAND BULARDIK")
     else:
         await message.answer("❌ Bunday film topilmadi. Iltimos, to‘g‘ri ID kiriting.")
 
 async def main():
     print("Bot ishga tushdi... 🚀")
+    asyncio.create_task(keep_alive())  # API'ni uyg'otib turish uchun
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
