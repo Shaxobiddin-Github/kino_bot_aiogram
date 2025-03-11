@@ -1,44 +1,23 @@
 import logging
 import requests
 import asyncio
-import os
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiogram.types import ContentType
-from fastapi import FastAPI
-import uvicorn
 
-# Muhit o'zgaruvchilarini yuklash
-API_TOKEN = os.getenv("BOT_TOKEN")
-BACKEND_URL = "https://telegram-bot-api-hyyl.onrender.com/api/movie/"
-WEBHOOK_URL = "https://telegram-bot-api-hyyl.onrender.com/webhook"
+API_TOKEN = "7775904021:AAFZZTv9DYwJMUXeKsBCNXznkDYchWbNT2o"
+BACKEND_URL = "http://127.0.0.1:8000/api/movie/"
 CHANNEL_USERNAME = "SNAYDERCOM"  # Kanal username
 
-# Bot va dispatcher yaratish
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
-app = FastAPI()
 
-# API'ni uyg'otish funksiyasi (har 10 daqiqada)
-async def keep_alive():
-    while True:
-        try:
-            requests.get(f"{BACKEND_URL}/ping/")
-            logging.info("✅ API ping yuborildi")
-        except Exception as e:
-            logging.error(f"❌ API ping yuborishda xatolik: {str(e)}")
-        await asyncio.sleep(600)  # 10 daqiqada 1 marta
-
-# Telegram webhook endpoint
-@app.post("/webhook")
-async def telegram_webhook(update: dict):
-    telegram_update = types.Update(**update)
-    await dp.feed_update(bot, telegram_update)
+logging.basicConfig(level=logging.INFO)
 
 # /start buyrug'i
 @dp.message(Command("start"))
 async def send_welcome(message: types.Message):
-    await message.answer("🎬 Assalomu alaykum!\n\nUziningizga kerakli kino kodini kiriting🔒 ")
+    await message.answer("🎬 Assalomu alaykum!\n\nuzingizga kerakli kino kodini kiriting🔒 ")
 
 # Video yuborilganda (bazaga saqlash uchun)
 @dp.message(lambda msg: msg.content_type == ContentType.VIDEO)
@@ -57,7 +36,7 @@ async def handle_incoming_video(message: types.Message):
     payload = {
         "title": f"Movie {message_id}",
         "movie_id": f"movie_{message_id}",
-        "file_id": video_url,
+        "file_id": video_url,  # file_id ga URL saqlanadi
         "description": "Video description"
     }
     try:
@@ -72,22 +51,22 @@ async def handle_incoming_video(message: types.Message):
 # Movie ID kiritilganda file_id qaytarish
 @dp.message()
 async def send_movie(message: types.Message):
-    movie_id = message.text.strip()
+    movie_id = message.text.strip()  # Foydalanuvchi kiritgan kod (movie_id)
     response = requests.get(f"{BACKEND_URL}{movie_id}/")
 
     if response.status_code == 200:
         data = response.json()
-        file_id = data["file_id"]
+        file_id = data["file_id"]  # file_id ni olish (URL)
         description = data["description"]
-        await message.answer(f"{description} \n 📢 channel: ➡️  {file_id} KANALIMIZGA AZO BULSANGIZ XURSAND BULARDIK")
+        await message.answer(f"{description} \n 📢 channel: ➡️  {file_id} KANALIMIZGA AZO BULSANGIZ XURSAND BULARDIK")  # Faqat file_id qaytariladi
+        
+
     else:
         await message.answer("❌ Bunday film topilmadi. Iltimos, to‘g‘ri ID kiriting.")
 
-# Botni ishga tushirish va webhook sozlash
-async def on_startup():
-    await bot.set_webhook(WEBHOOK_URL)
-    asyncio.create_task(keep_alive())  # API’ni uyg‘otish
+async def main():
+    print("Bot ishga tushdi... 🚀")
+    await dp.start_polling(bot)
 
 if __name__ == "__main__":
-    asyncio.run(on_startup())
-    uvicorn.run(app, host="0.0.0.0", port=10000)
+    asyncio.run(main())
